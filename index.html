@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Grammar Casino</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --gold: #f5c542;
+    --gold-2: #ffd863;
+    --green: #2fbf71;
+    --red: #e0453b;
+    --ink: #eaf3ee;
+    --muted: #a9c4b7;
+  }
+
+  body {
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: radial-gradient(circle at 50% 0%, #123a2c 0%, #07130f 55%, #040807 100%);
+    background-attachment: fixed;
+    color: var(--ink);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .screen { display: none; min-height: 100vh; padding: 22px; }
+  .screen.active { display: flex; flex-direction: column; gap: 14px; }
+  .screen.center-screen.active { justify-content: center; align-items: center; }
+
+  /* ---------- Panels ---------- */
+  .panel {
+    background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.02));
+    border: 1px solid rgba(245,197,66,.25);
+    border-radius: 22px;
+    padding: 32px 28px;
+    max-width: 560px;
+    width: 100%;
+    box-shadow: 0 24px 70px rgba(0,0,0,.55);
+    text-align: center;
+  }
+
+  .logo { font-size: 3rem; line-height: 1; margin-bottom: 8px; }
+
+  h1 {
+    font-size: clamp(1.6rem, 4vw, 2.2rem);
+    font-weight: 800;
+    letter-spacing: -.5px;
+    background: linear-gradient(180deg, #fff5cc, var(--gold), #c98f0a);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 6px;
+  }
+
+  .sub { color: var(--muted); font-size: .95rem; margin-bottom: 26px; line-height: 1.5; }
+
+  .step-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 16px;
+  }
+
+  /* ---------- Count buttons ---------- */
+  .count-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+  }
+
+  .count-btn {
+    aspect-ratio: 1;
+    font-size: 1.3rem;
+    font-weight: 800;
+    font-family: inherit;
+    border-radius: 14px;
+    border: 1px solid rgba(245,197,66,.35);
+    background: rgba(245,197,66,.06);
+    color: var(--gold);
+    cursor: pointer;
+    transition: .18s;
+  }
+  .count-btn:hover { background: rgba(245,197,66,.2); transform: translateY(-3px); box-shadow: 0 8px 20px rgba(245,197,66,.15); }
+  .count-btn:active { transform: translateY(0); }
+
+  /* ---------- Difficulty grid ---------- */
+  .diff-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .diff-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 20px;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.04);
+    color: var(--ink);
+    font-family: inherit;
+    cursor: pointer;
+    transition: .2s;
+    text-align: left;
+  }
+  .diff-btn:hover {
+    background: rgba(255,255,255,.09);
+    border-color: rgba(245,197,66,.4);
+    transform: translateY(-2px);
+  }
+  .diff-btn .d-icon { font-size: 1.8rem; }
+  .diff-btn .d-title { font-weight: 800; font-size: 1.05rem; display: block; color: var(--gold); }
+  .diff-btn .d-desc { font-size: .82rem; color: var(--muted); }
+
+  /* ---------- Team setup ---------- */
+  .team-inputs { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+
+  .team-input-row {
+    display: grid;
+    grid-template-columns: 34px 1fr 92px;
+    gap: 10px;
+    align-items: center;
+    text-align: left;
+  }
+
+  .team-badge {
+    width: 34px; height: 34px;
+    display: grid; place-items: center;
+    border-radius: 10px;
+    background: rgba(245,197,66,.12);
+    border: 1px solid rgba(245,197,66,.3);
+    color: var(--gold);
+    font-weight: 800;
+    font-size: .9rem;
+  }
+
+  input[type="text"], input[type="number"] {
+    font-family: inherit;
+    font-size: .95rem;
+    padding: 10px 12px;
+    border-radius: 11px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(0,0,0,.3);
+    color: var(--ink);
+    width: 100%;
+    outline: none;
+    transition: .15s;
+  }
+  input[type="text"]:focus, input[type="number"]:focus {
+    border-color: rgba(245,197,66,.7);
+    box-shadow: 0 0 0 3px rgba(245,197,66,.12);
+  }
+
+  .row-actions { display: flex; gap: 10px; }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    font-family: inherit;
+    font-size: .95rem;
+    font-weight: 800;
+    padding: 13px 22px;
+    border-radius: 13px;
+    border: none;
+    cursor: pointer;
+    transition: .18s;
+    flex: 1;
+  }
+
+  .btn.gold {
+    background: linear-gradient(180deg, var(--gold-2), #e0a91b);
+    color: #2a1d00;
+    box-shadow: 0 6px 22px rgba(245,197,66,.28);
+  }
+  .btn.gold:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(245,197,66,.4); }
+  .btn.gold:disabled { opacity: .35; cursor: not-allowed; box-shadow: none; }
+
+  .btn.ghost {
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.15);
+    color: var(--muted);
+    flex: 0 0 auto;
+  }
+  .btn.ghost:hover { background: rgba(255,255,255,.1); color: var(--ink); }
+
+  .hidden { display: none !important; }
+
+  /* ---------- Game screen ---------- */
+  .game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .brand { font-weight: 800; color: var(--gold); letter-spacing: .3px; font-size: .95rem; }
+
+  .round-label {
+    font-size: .85rem;
+    color: var(--muted);
+    font-weight: 600;
+    background: rgba(255,255,255,.05);
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,.1);
+  }
+
+  .progress {
+    height: 5px;
+    background: rgba(255,255,255,.07);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, #c98f0a, var(--gold-2));
+    border-radius: 999px;
+    transition: width .4s ease;
+  }
+
+  .scoreboard {
+    display: flex;
+    gap: 9px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+  }
+  .scoreboard::-webkit-scrollbar { height: 5px; }
+  .scoreboard::-webkit-scrollbar-thumb { background: rgba(245,197,66,.3); border-radius: 99px; }
+
+  .sb-item {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 11px;
+    padding: 7px 13px;
+  }
+  .sb-name { color: var(--muted); font-size: .82rem; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sb-score { color: var(--gold); font-weight: 800; font-size: .95rem; }
+
+  .table-area { flex: 1; display: flex; flex-direction: column; gap: 14px; }
+
+  .sentence-card {
+    background: linear-gradient(180deg, #0e4a36, #093024);
+    border: 1px solid rgba(245,197,66,.3);
+    border-radius: 18px;
+    padding: 30px 22px;
+    text-align: center;
+    box-shadow: inset 0 0 70px rgba(0,0,0,.45), 0 12px 34px rgba(0,0,0,.4);
+    transition: .3s;
+  }
+  .sentence-card.ok  { border-color: rgba(47,191,113,.8); box-shadow: inset 0 0 70px rgba(0,0,0,.45), 0 0 32px rgba(47,191,113,.2); }
+  .sentence-card.bad { border-color: rgba(224,69,59,.8);  box-shadow: inset 0 0 70px rgba(0,0,0,.45), 0 0 32px rgba(224,69,59,.2); }
+
+  .sc-label {
+    font-size: .68rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(245,197,66,.7);
+    font-weight: 800;
+    margin-bottom: 12px;
+  }
+
+  .sc-text { font-size: clamp(1.1rem, 2.6vw, 1.7rem); font-weight: 600; line-height: 1.45; }
+
+  .answer-banner {
+    border-radius: 14px;
+    padding: 14px 18px;
+    text-align: center;
+    animation: pop .3s ease;
+    border: 1px solid transparent;
+  }
+  .answer-banner.ok  { background: rgba(47,191,113,.12); border-color: rgba(47,191,113,.5); }
+  .answer-banner.bad { background: rgba(224,69,59,.12);  border-color: rgba(224,69,59,.5); }
+
+  .ab-verdict { font-weight: 800; font-size: 1rem; margin-bottom: 6px; }
+  .answer-banner.ok .ab-verdict  { color: #6df0a8; }
+  .answer-banner.bad .ab-verdict { color: #ff8d84; }
+  .ab-explain { color: var(--muted); font-size: .88rem; line-height: 1.5; }
+
+  @keyframes pop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+
+  .team-panels {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 12px;
+  }
+
+  .team-panel {
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.09);
+    border-radius: 16px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+    transition: .25s;
+  }
+  .team-panel.won  { border-color: rgba(47,191,113,.75); background: rgba(47,191,113,.08); }
+  .team-panel.lost { border-color: rgba(224,69,59,.6);   background: rgba(224,69,59,.06); }
+
+  .tp-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .tp-name { font-weight: 800; font-size: .92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tp-score { color: var(--gold); font-weight: 800; font-size: .95rem; flex: 0 0 auto; }
+
+  .tp-choice { display: flex; gap: 8px; }
+
+  .choice-btn {
+    flex: 1;
+    padding: 9px 6px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.03);
+    color: #cfe3d8;
+    font-family: inherit;
+    font-weight: 700;
+    font-size: .8rem;
+    cursor: pointer;
+    transition: .15s;
+  }
+  .choice-btn:hover:not(:disabled) { background: rgba(255,255,255,.09); }
+  .choice-btn.sel[data-choice="true"]  { background: rgba(47,191,113,.25); border-color: var(--green); color: #7ff0b0; }
+  .choice-btn.sel[data-choice="false"] { background: rgba(224,69,59,.22);  border-color: var(--red);   color: #ff9a92; }
+  .choice-btn:disabled { cursor: default; opacity: .8; }
+
+  .bet-label { font-size: .78rem; color: var(--muted); margin-bottom: 6px; }
+  .bet-label strong { color: var(--gold); font-size: .9rem; }
+
+  input[type="range"] {
+    width: 100%;
+    accent-color: var(--gold);
+    cursor: pointer;
+    height: 20px;
+  }
+  input[type="range"]:disabled { opacity: .6; cursor: default; }
+
+  .tp-result {
+    text-align: center;
+    font-weight: 800;
+    font-size: .85rem;
+    padding: 7px;
+    border-radius: 9px;
+    animation: pop .3s ease;
+  }
+  .tp-result.pos     { background: rgba(47,191,113,.18); color: #7ff0b0; }
+  .tp-result.neg     { background: rgba(224,69,59,.18);  color: #ff9a92; }
+  .tp-result.neutral { background: rgba(255,255,255,.06); color: var(--muted); }
+
+  .game-footer { display: flex; gap: 10px; padding-top: 4px; }
+
+  /* ---------- End screen ---------- */
+  .final-scores { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+
+  .fs-row {
+    display: grid;
+    grid-template-columns: 40px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 13px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.08);
+    text-align: left;
+  }
+  .fs-row.first {
+    background: rgba(245,197,66,.12);
+    border-color: rgba(245,197,66,.5);
+    box-shadow: 0 0 26px rgba(245,197,66,.15);
+  }
+  .fs-rank { font-size: 1.15rem; font-weight: 800; color: var(--gold); }
+  .fs-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fs-score { font-weight: 800; color: var(--gold); font-size: 1.05rem; }
+
+  @media (max-width: 520px) {
+    .panel { padding: 24px 18px; }
+    .count-grid { gap: 7px; }
+    .count-btn { font-size: 1.1rem; border-radius: 11px; }
+    .team-input-row { grid-template-columns: 30px 1fr 76px; }
+    .screen { padding: 14px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ SCREEN 1: NUMBER OF TEAMS ============ -->
+<section id="screen-count" class="screen center-screen active">
+  <div class="panel">
+    <div class="logo">🎰</div>
+    <h1>Grammar Casino</h1>
+    <p class="sub">Read the sentence. Bet your chips.<br>Decide if it's correct or incorrect.</p>
+    <h2 class="step-title">How many teams are playing?</h2>
+    <div class="count-grid">
+      <button class="count-btn" data-count="2">2</button>
+      <button class="count-btn" data-count="3">3</button>
+      <button class="count-btn" data-count="4">4</button>
+      <button class="count-btn" data-count="5">5</button>
+      <button class="count-btn" data-count="6">6</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SCREEN 2: DIFFICULTY ============ -->
+<section id="screen-difficulty" class="screen center-screen">
+  <div class="panel">
+    <div class="logo">🎯</div>
+    <h1>Select Difficulty</h1>
+    <p class="sub">Choose the level of grammar challenge.</p>
+    <div class="diff-grid">
+      <button class="diff-btn" data-level="easy">
+        <span class="d-icon">🌱</span>
+        <div>
+          <span class="d-title">Easy</span>
+          <span class="d-desc">Basic grammar rules & simple mistakes</span>
+        </div>
+      </button>
+      <button class="diff-btn" data-level="medium">
+        <span class="d-icon">🔥</span>
+        <div>
+          <span class="d-title">Medium</span>
+          <span class="d-desc">Intermediate structures & common traps</span>
+        </div>
+      </button>
+      <button class="diff-btn" data-level="hard">
+        <span class="d-icon">💀</span>
+        <div>
+          <span class="d-title">Hard</span>
+          <span class="d-desc">Advanced grammar & tricky exceptions</span>
+        </div>
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SCREEN 3: TEAM NAMES & CHIPS ============ -->
+<section id="screen-teams" class="screen center-screen">
+  <div class="panel">
+    <div class="logo">🪙</div>
+    <h1>Set Up Your Teams</h1>
+    <p class="sub">Give each team a name and its starting chips.</p>
+    <div id="teamInputs" class="team-inputs"></div>
+    <div class="row-actions">
+      <button class="btn ghost" id="backToDiff">← Back</button>
+      <button class="btn gold" id="startGameBtn">Enter the Casino →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SCREEN 4: GAME TABLE ============ -->
+<section id="screen-game" class="screen">
+  <header class="game-header">
+    <span class="brand">🎰 Grammar Casino</span>
+    <span id="roundLabel" class="round-label"></span>
+  </header>
+
+  <div class="progress"><div id="progressBar" class="progress-bar"></div></div>
+
+  <div id="scoreboard" class="scoreboard"></div>
+
+  <main class="table-area">
+    <div id="sentenceCard" class="sentence-card">
+      <div class="sc-label">The Sentence</div>
+      <div id="sentenceText" class="sc-text"></div>
+    </div>
+
+    <div id="answerBanner" class="answer-banner hidden"></div>
+
+    <div id="teamPanels" class="team-panels"></div>
+  </main>
+
+  <footer class="game-footer">
+    <button id="revealBtn" class="btn gold" disabled>Reveal Answer</button>
+    <button id="nextBtn" class="btn gold hidden">Next Round →</button>
+  </footer>
+</section>
+
+<!-- ============ SCREEN 5: RESULTS ============ -->
+<section id="screen-end" class="screen center-screen">
+  <div class="panel">
+    <div class="logo">🏆</div>
+    <h1 id="winnerTitle">Winner</h1>
+    <p class="sub">Final chip count</p>
+    <div id="finalScores" class="final-scores"></div>
+    <button class="btn gold" id="playAgain">Play Again</button>
+  </div>
+</section>
+
+<script>
+/* =========================================================
+   SENTENCE BANK (with Difficulty Tags)
+   ========================================================= */
+const SENTENCES = [
+  // --- EASY ---
+  { text: "She don't like coffee.", correct: false, difficulty: "easy",
+    explain: "Incorrect. → “She doesn't like coffee.” Third person singular takes “doesn't”." },
+  { text: "I have seen him yesterday.", correct: false, difficulty: "easy",
+    explain: "Incorrect. → “I saw him yesterday.” A finished past time needs the past simple." },
+  { text: "He is more taller than his brother.", correct: false, difficulty: "easy",
+    explain: "Incorrect. → “He is taller than his brother.” Never use a double comparative." },
+  { text: "Everyone were happy with the result.", correct: false, difficulty: "easy",
+    explain: "Incorrect. → “Everyone was happy with the result.” “Everyone” is singular." },
+  { text: "I am living here since 2010.", correct: false, difficulty: "easy",
+    explain: "Incorrect. → “I have been living here since 2010.” “Since” goes with a perfect tense." },
+  { text: "The people is very friendly.", correct: false, difficulty: "easy",
+    explain: "Incorrect. → “The people are very friendly.” “People” is a plural noun." },
+  { text: "She can to swim very well.", correct: false, difficulty: "easy",
+    explain: "Incorrect. → “She can swim very well.” Modal verbs take the bare infinitive." },
+  { text: "They is playing football in the park.", correct: false, difficulty: "easy",
+    explain: "Incorrect. → “They are playing football in the park.” Plural subject takes “are”." },
+  { text: "I has a new bicycle.", correct: false, difficulty: "easy",
+    explain: "Incorrect. → “I have a new bicycle.” First person takes “have”." },
+  { text: "She go to school every day.", correct: false, difficulty: "easy",
+    explain: "Incorrect. → “She goes to school every day.” Third person singular adds -s." },
+
+  // --- MEDIUM ---
+  { text: "She has been living in London for five years.", correct: true, difficulty: "medium",
+    explain: "Correct. Present perfect continuous for an action that started in the past and still continues." },
+  { text: "The information you gave me was very useful.", correct: true, difficulty: "medium",
+    explain: "Correct. “Information” is uncountable, so it takes a singular verb." },
+  { text: "Neither of the boys wants to go home.", correct: true, difficulty: "medium",
+    explain: "Correct. “Neither of” + plural noun takes a singular verb in formal English." },
+  { text: "I'm looking forward to meeting your parents.", correct: true, difficulty: "medium",
+    explain: "Correct. “Look forward to” is followed by a gerund (-ing form)." },
+  { text: "I look forward to see you soon.", correct: false, difficulty: "medium",
+    explain: "Incorrect. → “I look forward to seeing you soon.” Gerund after “look forward to”." },
+  { text: "She explained me the rules.", correct: false, difficulty: "medium",
+    explain: "Incorrect. → “She explained the rules to me.” “Explain” needs “to” before the person." },
+  { text: "There are fewer students in this class than in mine.", correct: true, difficulty: "medium",
+    explain: "Correct. “Fewer” is used with countable nouns (students)." },
+  { text: "There is many reasons to be optimistic.", correct: false, difficulty: "medium",
+    explain: "Incorrect. → “There are many reasons to be optimistic.” Plural noun needs “are”." },
+  { text: "By the time we arrived, the film had already started.", correct: true, difficulty: "medium",
+    explain: "Correct. Past perfect for the earlier of two past actions." },
+  { text: "If I will see him, I will tell him.", correct: false, difficulty: "medium",
+    explain: "Incorrect. → “If I see him, I will tell him.” No “will” in the if-clause of a first conditional." },
+  { text: "She is used to getting up at six o'clock.", correct: true, difficulty: "medium",
+    explain: "Correct. “Be used to” + gerund = be accustomed to something." },
+  { text: "He said me that he was tired.", correct: false, difficulty: "medium",
+    explain: "Incorrect. → “He told me that he was tired.” “Say” does not take a person object directly." },
+  { text: "The news was so shocking that nobody spoke.", correct: true, difficulty: "medium",
+    explain: "Correct. “News” is uncountable, so it takes a singular verb." },
+  { text: "It's the best film I have ever seen.", correct: true, difficulty: "medium",
+    explain: "Correct. Superlative + present perfect is the standard pattern." },
+  { text: "Would you mind closing the window, please?", correct: true, difficulty: "medium",
+    explain: "Correct. “Would you mind” is followed by a gerund." },
+
+  // --- HARD ---
+  { text: "If I had known, I would have told you.", correct: true, difficulty: "hard",
+    explain: "Correct. Third conditional: if + past perfect, would have + past participle." },
+  { text: "He suggested that we leave early.", correct: true, difficulty: "hard",
+    explain: "Correct. After “suggest”, the that-clause uses the base form of the verb." },
+  { text: "No sooner had I arrived than it started raining.", correct: true, difficulty: "hard",
+    explain: "Correct. Inversion after “No sooner” at the beginning of a sentence." },
+  { text: "Had I known, I would have acted differently.", correct: true, difficulty: "hard",
+    explain: "Correct. Inverted third conditional (omitting “if”)." },
+  { text: "Little does he know about the truth.", correct: true, difficulty: "hard",
+    explain: "Correct. Inversion after “Little” at the beginning of a sentence." },
+  { text: "I'd rather you didn't tell anyone.", correct: true, difficulty: "hard",
+    explain: "Correct. “Would rather” + past simple for present/future preferences." },
+  { text: "She hardly has any money left.", correct: true, difficulty: "hard",
+    explain: "Correct. “Hardly” is followed by a normal word order." },
+  { text: "It's high time we left.", correct: true, difficulty: "hard",
+    explain: "Correct. “It's high time” + past simple for present/future unreal past." },
+  { text: "Scarcely had she finished speaking when the lights went out.", correct: true, difficulty: "hard",
+    explain: "Correct. Inversion after “Scarcely” at the beginning of a sentence." },
+  { text: "Under no circumstances you should open this door.", correct: false, difficulty: "hard",
+    explain: "Incorrect. → “Under no circumstances should you open this door.” Inversion is needed." }
+];
+
+/* =========================================================
+   HELPERS
+   ========================================================= */
+const $  = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+const esc = s => String(s).replace(/[&<>"']/g, c =>
+  ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function showScreen(id) {
+  $$('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* =========================================================
+   STATE
+   ========================================================= */
+let numTeams = 2;
+let selectedDifficulty = 'medium';
+let state = null;
+
+/* =========================================================
+   STEP 1 — NUMBER OF TEAMS
+   ========================================================= */
+$$('.count-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    numTeams = parseInt(btn.dataset.count, 10);
+    showScreen('screen-difficulty');
+  });
+});
+
+/* =========================================================
+   STEP 2 — DIFFICULTY
+   ========================================================= */
+$$('.diff-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    selectedDifficulty = btn.dataset.level;
+    buildTeamSetup();
+    showScreen('screen-teams');
+  });
+});
+
+/* =========================================================
+   STEP 3 — TEAM SETUP
+   ========================================================= */
+function buildTeamSetup() {
+  const wrap = $('#teamInputs');
+  wrap.innerHTML = '';
+  for (let i = 0; i < numTeams; i++) {
+    const row = document.createElement('div');
+    row.className = 'team-input-row';
+    row.innerHTML = `
+      <span class="team-badge">${i + 1}</span>
+      <input type="text" class="t-name" maxlength="18" value="Team ${i + 1}" placeholder="Team name">
+      <input type="number" class="t-score" min="0" max="99999" step="10" value="100" title="Starting chips">
+    `;
+    wrap.appendChild(row);
+  }
+}
+
+$('#backToDiff').addEventListener('click', () => showScreen('screen-difficulty'));
+
+$('#startGameBtn').addEventListener('click', () => {
+  const nameInputs  = $$('.t-name');
+  const scoreInputs = $$('.t-score');
+
+  const teams = nameInputs.map((inp, i) => {
+    const name  = inp.value.trim() || `Team ${i + 1}`;
+    let score   = parseInt(scoreInputs[i].value, 10);
+    if (isNaN(score) || score < 0) score = 0;
+    return { name, score, bet: 0, choice: null, delta: 0 };
+  });
+
+  // Filter sentences based on selected difficulty
+  const filteredSentences = SENTENCES.filter(s => s.difficulty === selectedDifficulty);
+  const deck = shuffle(filteredSentences.length > 0 ? filteredSentences : SENTENCES);
+
+  state = {
+    teams,
+    deck,
+    round: 0,
+    phase: 'betting'   // 'betting' | 'revealed'
+  };
+
+  state.teams.forEach(t => { t.bet = Math.min(10, Math.max(t.score, 10)); });
+
+  renderGame();
+  showScreen('screen-game');
+});
+
+/* =========================================================
+   RENDER — GAME
+   ========================================================= */
+function renderGame() {
+  const st = state;
+  const sentence = st.deck[st.round];
+  const revealed = st.phase === 'revealed';
+
+  /* header + progress */
+  $('#roundLabel').textContent = `Round ${st.round + 1} of ${st.deck.length}`;
+  const pct = ((st.round + (revealed ? 1 : 0)) / st.deck.length) * 100;
+  $('#progressBar').style.width = pct + '%';
+
+  /* sentence */
+  const card = $('#sentenceCard');
+  card.classList.remove('ok', 'bad');
+  if (revealed) card.classList.add(sentence.correct ? 'ok' : 'bad');
+  $('#sentenceText').textContent = sentence.text;
+
+  /* scoreboard */
+  $('#scoreboard').innerHTML = st.teams.map(t => `
+    <div class="sb-item">
+      <span class="sb-name">${esc(t.name)}</span>
+      <span class="sb-score">${t.score}</span>
+    </div>
+  `).join('');
+
+  /* answer banner */
+  const banner = $('#answerBanner');
+  if (revealed) {
+    banner.classList.remove('hidden');
+    banner.classList.toggle('ok', sentence.correct);
+    banner.classList.toggle('bad', !sentence.correct);
+    banner.innerHTML = `
+      <div class="ab-verdict">
+        ${sentence.correct ? '✔ This sentence is CORRECT' : '✘ This sentence is INCORRECT'}
+      </div>
+      <div class="ab-explain">${esc(sentence.explain)}</div>
+    `;
+  } else {
+    banner.classList.add('hidden');
+    banner.innerHTML = '';
+  }
+
+  /* team panels */
+  const wrap = $('#teamPanels');
+  wrap.innerHTML = '';
+
+  st.teams.forEach((t, i) => {
+    const maxBet = Math.max(t.score, 10);
+    const panel = document.createElement('div');
+    panel.className = 'team-panel';
+
+    let resultHTML = '';
+    if (revealed) {
+      const wasRight = t.choice === sentence.correct;
+      if (t.bet === 0) {
+        panel.classList.add('lost');
+        resultHTML = `<div class="tp-result neutral">No bet — no change</div>`;
+      } else if (wasRight) {
+        panel.classList.add('won');
+        resultHTML = `<div class="tp-result pos">Won +${t.delta}</div>`;
+      } else {
+        panel.classList.add('lost');
+        resultHTML = `<div class="tp-result neg">Lost ${t.delta}</div>`;
+      }
+    }
+
+    panel.innerHTML = `
+      <div class="tp-head">
+        <span class="tp-name">${esc(t.name)}</span>
+        <span class="tp-score">${t.score}</span>
+      </div>
+
+      <div class="tp-choice">
+        <button class="choice-btn ${t.choice === true ? 'sel' : ''}"
+                data-i="${i}" data-choice="true" ${revealed ? 'disabled' : ''}>✔ Correct</button>
+        <button class="choice-btn ${t.choice === false ? 'sel' : ''}"
+                data-i="${i}" data-choice="false" ${revealed ? 'disabled' : ''}>✘ Incorrect</button>
+      </div>
+
+      <div class="tp-bet">
+        <div class="bet-label">Bet: <strong>${t.bet}</strong> chips</div>
+        <input type="range" class="bet-slider" data-i="${i}"
+               min="0" max="${maxBet}" step="1" value="${t.bet}"
+               ${revealed ? 'disabled' : ''}>
+      </div>
+
+      ${resultHTML}
+    `;
+
+    wrap.appendChild(panel);
+  });
+
+  /* footer buttons */
+  $('#revealBtn').classList.toggle('hidden', revealed);
+  $('#nextBtn').classList.toggle('hidden', !revealed);
+  $('#nextBtn').textContent = (st.round === st.deck.length - 1)
+    ? 'See Final Results 🏆'
+    : 'Next Round →';
+
+  updateRevealButton();
+}
+
+function updateRevealButton() {
+  const allChosen = state.teams.every(t => t.choice !== null);
+  $('#revealBtn').disabled = !allChosen;
+}
+
+/* =========================================================
+   TEAM PANEL INTERACTIONS (event delegation)
+   ========================================================= */
+$('#teamPanels').addEventListener('click', e => {
+  const btn = e.target.closest('.choice-btn');
+  if (!btn || btn.disabled) return;
+
+  const i = parseInt(btn.dataset.i, 10);
+  const choice = btn.dataset.choice === 'true';
+
+  state.teams[i].choice = choice;
+
+  btn.parentElement.querySelectorAll('.choice-btn')
+     .forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+
+  updateRevealButton();
+});
+
+$('#teamPanels').addEventListener('input', e => {
+  if (!e.target.classList.contains('bet-slider')) return;
+
+  const i = parseInt(e.target.dataset.i, 10);
+  const val = parseInt(e.target.value, 10);
+
+  state.teams[i].bet = val;
+
+  const label = e.target.closest('.tp-bet').querySelector('.bet-label strong');
+  if (label) label.textContent = val;
+});
+
+/* =========================================================
+   REVEAL ANSWER
+   ========================================================= */
+$('#revealBtn').addEventListener('click', () => {
+  const st = state;
+  const sentence = st.deck[st.round];
+
+  st.teams.forEach(t => {
+    const wasRight = (t.choice === sentence.correct);
+    t.delta = wasRight ? t.bet : -t.bet;
+    t.score += t.delta;
+    if (t.score < 0) t.score = 0;
+  });
+
+  st.phase = 'revealed';
+  renderGame();
+});
+
+/* =========================================================
+   NEXT ROUND / END
+   ========================================================= */
+$('#nextBtn').addEventListener('click', () => {
+  const st = state;
+
+  if (st.round >= st.deck.length - 1) {
+    endGame();
+    return;
+  }
+
+  st.round++;
+  st.phase = 'betting';
+
+  st.teams.forEach(t => {
+    t.choice = null;
+    t.delta = 0;
+    t.bet = Math.min(10, Math.max(t.score, 10));
+  });
+
+  renderGame();
+});
+
+/* =========================================================
+   END SCREEN
+   ========================================================= */
+function endGame() {
+  const sorted = state.teams.slice().sort((a, b) => b.score - a.score);
+  const medals = ['🥇', '🥈', '🥉'];
+
+  $('#finalScores').innerHTML = sorted.map((t, i) => `
+    <div class="fs-row ${i === 0 ? 'first' : ''}">
+      <span class="fs-rank">${medals[i] || (i + 1)}</span>
+      <span class="fs-name">${esc(t.name)}</span>
+      <span class="fs-score">${t.score}</span>
+    </div>
+  `).join('');
+
+  const top = sorted[0];
+  const tied = sorted.filter(t => t.score === top.score).length > 1;
+  $('#winnerTitle').textContent = tied
+    ? `It's a tie!`
+    : `${top.name} wins!`;
+
+  showScreen('screen-end');
+}
+
+/* =========================================================
+   PLAY AGAIN
+   ========================================================= */
+$('#playAgain').addEventListener('click', () => {
+  state = null;
+  numTeams = 2;
+  showScreen('screen-count');
+});
+</script>
+</body>
+</html>
