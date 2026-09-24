@@ -889,8 +889,11 @@ $('#startGameBtn').addEventListener('click', () => {
   });
 
   // Filter sentences based on selected difficulty
-  const filteredSentences = SENTENCES.filter(s => s.difficulty === selectedDifficulty);
-  const deck = shuffle(filteredSentences.length > 0 ? filteredSentences : SENTENCES);
+  const pool = SENTENCES.filter(s => s.difficulty === selectedDifficulty);
+  const randomPool = shuffle(pool.length > 0 ? pool : SENTENCES);
+  
+  // فقط ۱۰ سوال به صورت تصادفی از بین ۵۰ سوال انتخاب میشه
+  const deck = randomPool.slice(0, 10); 
 
   state = {
     teams,
